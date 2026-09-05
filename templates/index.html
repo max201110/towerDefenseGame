@@ -2,6 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
+    <!-- FIX: Use aspect-ratio to prevent canvas distortion on resize -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>塔防游戏</title>
     <style>
@@ -28,15 +29,19 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 0 30px rgba(255,215,0,0.2);
-            max-width: 100%;
+            /* FIX: Constrain width and use aspect-ratio to prevent distortion */
+            width: min(1050px, 100vw - 20px);
+            aspect-ratio: 1050 / 540;
         }
         canvas {
             display: block;
+            width: 100%;
+            height: 100%;
             background: #1a2a1a;
             cursor: crosshair;
-            max-width: 100%;
-            height: auto;
         }
+        /* FIX: Show pointer cursor when hovering existing towers */
+        canvas.hovering-tower { cursor: pointer; }
         .start-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -125,10 +130,11 @@
     <h1>🏰 塔防游戏</h1>
 
     <div class="game-container">
+        <!-- FIX: Use CSS aspect-ratio instead of fixed canvas dimensions -->
         <canvas id="gameCanvas" width="1050" height="540"></canvas>
         <div class="start-overlay" id="startOverlay">
             <button class="start-button" id="startButton">开始游戏</button>
-            <p style="color:#aaa;">选择塔 → 点击地图放置 → 右键升级/出售</p>
+            <p style="color:#aaa;">选择塔 → 点击地图放置 → 左键升级 / 右键出售</p>
         </div>
         <div class="tooltip" id="tooltip"></div>
     </div>
@@ -281,7 +287,7 @@
                 ctx.beginPath(); ctx.moveTo(i*GS, 0); ctx.lineTo(i*GS, GH*GS); ctx.stroke();
             }
             for (let j = 0; j <= GH; j++) {
-                ctx.beginPath(); ctx.moveTo(0, j*GS); ctx.lineTo(GW*GS, j*GS); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, j*GS); ctx.lineTo(0, GH*GS); ctx.stroke();
             }
         }
 
@@ -482,8 +488,11 @@
                     `升级: 💰${upg} | 出售: 💰${sell}<br>` +
                     `<small>左键升级 · 右键出售</small>`
                 );
+                // FIX: Show pointer cursor when hovering existing tower
+                canvas.classList.add('hovering-tower');
             } else {
                 hideTooltip();
+                canvas.classList.remove('hovering-tower');
             }
         });
 
@@ -494,7 +503,7 @@
             const existing = gs.towers.find(t => t.x === gx && t.y === gy);
 
             if (existing) {
-                // Click on existing tower = upgrade (no tower selected)
+                // Click on existing tower = upgrade
                 if (!gs.selected_tower) {
                     upgradeTower(gx, gy);
                     return;
@@ -585,8 +594,8 @@
             })
             .then(r => r.json())
             .then(d => {
-                if (d.status === 'error') { console.error(d.message); return; }
-                // Apply server state
+                // FIX: update_game returns game_state directly (no 'status' field)
+                // Apply server state directly
                 const keys = ['towers','enemies','current_wave','lives','money','score',
                               'is_running','wave_timer','wave_interval','spawn_timer',
                               'spawn_interval','wave_enemies','wave_total','game_over'];
