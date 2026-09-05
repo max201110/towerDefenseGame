@@ -126,7 +126,7 @@ def update_game():
     game_state['wave_timer'] += 1
     game_state['enemy_spawn_timer'] += 1
 
-    # Start new wave when timer expires (fixed: no enemy count check)
+    # Start new wave when timer expires
     if game_state['wave_timer'] >= game_state['wave_interval']:
         start_new_wave()
         game_state['wave_timer'] = 0
@@ -268,6 +268,7 @@ def update_towers():
             continue
 
         if tower['type'] == 'SUPPORT':
+            # FIX: Only buff once per cooldown, not every frame (was infinite buff bug)
             for other in game_state['towers']:
                 if other is tower:
                     continue
@@ -275,6 +276,7 @@ def update_towers():
                 dy = other['y'] - tower['y']
                 if math.sqrt(dx * dx + dy * dy) <= tower['range']:
                     other['damage'] = int(other['damage'] * 1.25)
+            tower['cooldown'] = 120  # Buff every 120 frames (~2 seconds)
             continue
 
         if not tower['target'] or tower['target'] not in game_state['enemies']:
@@ -343,7 +345,7 @@ def get_tower_damage(t):
 
 def get_tower_attack_speed(t):
     return {'ARROW': 20, 'CANNON': 30, 'MAGIC': 15, 'LASER': 25,
-            'ICE': 27, 'POISON': 20, 'SNIPER': 40, 'SUPPORT': 0}.get(t, 20)
+            'ICE': 27, 'POISON': 20, 'SNIPER': 40, 'SUPPORT': 120}.get(t, 20)
 
 def get_tower_range(t):
     return {'ARROW': 3, 'CANNON': 2, 'MAGIC': 3, 'LASER': 4,
@@ -427,4 +429,5 @@ def serve_tower_images(filename):
 if __name__ == '__main__':
     if not os.path.exists('templates'):
         os.makedirs('templates')
-    app.run(host='0.0.0.0', port=5004, debug=True)
+    # FIX: Disable debug mode for production safety (was True, exposes debugger)
+    app.run(host='0.0.0.0', port=5004, debug=False)
