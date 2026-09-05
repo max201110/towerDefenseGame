@@ -37,6 +37,10 @@ game_state = {
 def index():
     return render_template('index.html')
 
+@app.route('/health')
+def health():
+    return jsonify({'status': 'ok', 'service': 'tower-defense', 'version': '1.0'})
+
 @app.route('/game_state')
 def get_game_state():
     return jsonify(game_state)
@@ -431,3 +435,5 @@ if __name__ == '__main__':
         os.makedirs('templates')
     # FIX: Disable debug mode for production safety (was True, exposes debugger)
     app.run(host='0.0.0.0', port=5004, debug=False)
+
+
